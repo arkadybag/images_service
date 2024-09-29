@@ -12,7 +12,7 @@ services:
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -U image-service" ]
       timeout: 7s
       retries: 5
   web-app:
@@ -27,8 +27,8 @@ services:
     volumes:
       - .:/code
     ports:
-      - "127.0.0.1:5000:5000"
-    command: sh -c "uvicorn main:app --host 0.0.0.0 --port 5000"
+      - "127.0.0.1:5001:5001"
+    command: sh -c "uvicorn main:app --host 0.0.0.0 --port 5001"
     depends_on:
       db:
         condition: service_healthy
@@ -42,3 +42,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+  populate_initial:
+    image: web-app
+    env_file:
+      - .env
+    command: python import_data.py
+    depends_on:
+      db:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
